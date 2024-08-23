@@ -1,0 +1,12 @@
+datasets==2.14.4
+peft==0.6.0
+transformers==4.32.0
+tqdm==4.66.1
+huggingface_hub==0.17.3
+python-dotenv==1.0.0
+wandb==0.15.8
+torch==2.0.1
+numpy==1.25.0
+pandas==2.0.3
+rouge-metric==1.0.1
+openai==0.28.0
