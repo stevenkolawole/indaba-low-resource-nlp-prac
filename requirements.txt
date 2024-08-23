@@ -9,4 +9,5 @@ torch==2.0.1
 numpy==1.25.0
 pandas==2.0.3
 rouge-metric==1.0.1
+rouge-score
 openai==0.28.0
