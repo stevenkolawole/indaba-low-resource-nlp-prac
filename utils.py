@@ -4,8 +4,9 @@ import subprocess
 def load_models():
     import torch
     from peft import PeftModel, PeftConfig
-    from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
+    from transformers import AutoModelForSeq2SeqLM, AutoTokenizer, EncoderDecoderModel
 
+    # LoRA PEFT models
     config = PeftConfig.from_pretrained("alizaidi/lora-mt5-goud")
     base_model = AutoModelForSeq2SeqLM.from_pretrained("google/mt5-small")
     device_map = {"": 0} if torch.cuda.is_available() else None
@@ -14,7 +15,50 @@ def load_models():
     )
     tokenizer = AutoTokenizer.from_pretrained("alizaidi/lora-mt5-goud")
 
-    return model, tokenizer, config
+    lora_goud = {
+        "model": model,
+        "tokenizer": tokenizer,
+        "config": config,
+    }
+
+    # base models
+    tokenizer = AutoTokenizer.from_pretrained("google/mt5-small")
+    model = AutoModelForSeq2SeqLM.from_pretrained("google/mt5-small")
+
+    mt5_small = {
+        "model": model,
+        "tokenizer": tokenizer,
+    }
+
+    # load bert fine-tunes
+    bert_finetune_names = [
+        "Goud/AraBERT-summarization-goud",
+        "Goud/DziriBERT-summarization-goud",
+        "Goud/DarijaBERT-summarization-goud",
+    ]
+    for model_name in bert_finetune_names:
+        print(f"Evaluating model: {model_name}")
+
+        if (
+            "AraBERT" in model_name
+            or "DziriBERT" in model_name
+            or "DarijaBERT" in model_name
+        ):
+            tokenizer = AutoTokenizer.from_pretrained(model_name)
+            tokenizer.model_max_length = 1024
+            model = EncoderDecoderModel.from_pretrained(model_name)
+            model.config.max_position_embeddings = 1024
+        else:
+            tokenizer = AutoTokenizer.from_pretrained(model_name)
+            model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
+        bert_models = {
+            f"{model_name}": {
+                "model": model,
+                "tokenizer": tokenizer,
+            }
+        }
+
+    return lora_goud, mt5_small, bert_models
 
 
 def install_requirements(requirements_path="requirements.txt"):
