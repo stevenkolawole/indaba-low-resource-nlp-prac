@@ -1,10 +1,11 @@
 import subprocess
-import torch
-from peft import PeftModel, PeftConfig
-from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 
 
 def load_models():
+    import torch
+    from peft import PeftModel, PeftConfig
+    from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
+
     config = PeftConfig.from_pretrained("alizaidi/lora-mt5-goud")
     base_model = AutoModelForSeq2SeqLM.from_pretrained("google/mt5-small")
     device_map = {"": 0} if torch.cuda.is_available() else None
