@@ -4,8 +4,6 @@ import time
 import time
 import pandas as pd
 from tqdm import tqdm
-from openai import OpenAI
-import openai
 
 
 def load_existing_data(output_filename):
@@ -46,6 +44,9 @@ def summarize_news_article(
     - api_key: API key for the OpenAI API.
     - max_train: Maximum number of training examples to include in prompts.
     """
+    from openai import OpenAI
+    import openai
+
     client = OpenAI(api_key=api_key)
     df_lines, existing_len = load_existing_data(output_filename)
     rewritten_prompt_count = existing_len
