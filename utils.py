@@ -36,6 +36,7 @@ def load_models():
         "Goud/DziriBERT-summarization-goud",
         "Goud/DarijaBERT-summarization-goud",
     ]
+    bert_models = {}
     for model_name in bert_finetune_names:
         print(f"Evaluating model: {model_name}")
 
@@ -51,11 +52,9 @@ def load_models():
         else:
             tokenizer = AutoTokenizer.from_pretrained(model_name)
             model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
-        bert_models = {
-            f"{model_name}": {
-                "model": model,
-                "tokenizer": tokenizer,
-            }
+        bert_models[model_name] = {
+            "model": model,
+            "tokenizer": tokenizer,
         }
 
     return lora_goud, mt5_small, bert_models
