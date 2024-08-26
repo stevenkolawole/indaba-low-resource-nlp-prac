@@ -38,17 +38,15 @@ def load_models():
     ]
     bert_models = {}
     for model_name in bert_finetune_names:
-        print(f"Evaluating model: {model_name}")
 
         if (
             "AraBERT" in model_name
             or "DziriBERT" in model_name
             or "DarijaBERT" in model_name
         ):
+            print(f"Loading model: {model_name}")
             tokenizer = AutoTokenizer.from_pretrained(model_name)
-            tokenizer.model_max_length = 1024
             model = EncoderDecoderModel.from_pretrained(model_name)
-            model.config.max_position_embeddings = 1024
         else:
             tokenizer = AutoTokenizer.from_pretrained(model_name)
             model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
