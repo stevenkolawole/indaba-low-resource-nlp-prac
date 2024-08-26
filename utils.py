@@ -1,5 +1,85 @@
 import subprocess
+import os
+import time 
+import time
+import pandas as pd
+from tqdm import tqdm
+from openai import OpenAI
+import openai
 
+
+def load_existing_data(output_filename):
+    """Load existing data from the CSV file if it exists."""
+    if os.path.exists(output_filename):
+        existing_df = pd.read_csv(output_filename)
+        return existing_df.to_dict('records'), existing_df.shape[0]
+    return [], 0
+
+def handle_rate_limit_error(wait_time):
+    """Handle rate limit errors by waiting and doubling the wait time."""
+    print("Rate limit error")
+    print(f"Waiting for {wait_time} seconds...", flush=True)
+    time.sleep(wait_time)
+    return wait_time * 2
+
+def substring_after_colon(input_string):
+    colon_index = input_string.find(':')
+    if colon_index != -1:
+        return input_string[colon_index + 1:]
+    else:
+        return input_string
+    
+
+def summarize_news_article(test_source, base_prompt, output_filename, model_name, api_key, max_train=20):
+    """
+    Summarize news articles into clickbait headlines in Moroccan Darija.
+
+    Parameters:
+    - test_source: List of news articles to summarize.
+    - base_prompt: list of system messages and user (few-shot) messages.
+    - output_filename: Name of the output CSV file.
+    - model_name: Model name to use for the OpenAI API.
+    - api_key: API key for the OpenAI API.
+    - max_train: Maximum number of training examples to include in prompts.
+    """
+    client = OpenAI(api_key=api_key)
+    df_lines, existing_len = load_existing_data(output_filename)
+    rewritten_prompt_count = existing_len
+    wait_time = 1
+
+    for data in tqdm(test_source[existing_len:], desc=f"Processing lines from {existing_len}-th line"):
+        news_article = data.strip()
+        made_error = True
+        num_error = 0
+        final_prompt = base_prompt.copy()  # Step 1: Copy the base prompt
+        final_prompt.append({              # Step 2: Append the new dictionary
+            "role": "user",
+            "content": f"Summarize the following news article into a headline in Moroccan Darija only:\n\"{news_article}\""
+        })
+        
+        while made_error:            
+            try:
+                response = client.chat.completions.create(
+                    messages= final_prompt,
+                    model=model_name,
+                )
+                headline = response.choices[0].message.content
+                df_lines.append({"article": news_article, "generated_headline": headline, "prompt_messages": final_prompt})
+                rewritten_prompt_count += 1
+                made_error = False
+
+            except Exception as e:
+                if isinstance(e, openai.RateLimitError):
+                    wait_time = handle_rate_limit_error(wait_time)
+                else:
+                    print(f"Error: {e}")
+                    num_error += 1
+                    print("Consider Reducing the shots_count to", max_train - num_error)
+
+    df = pd.DataFrame.from_dict(df_lines)
+    df.to_csv(output_filename, index=False)
+    print(f"Saved {rewritten_prompt_count} headlines to {output_filename}")
+    
 
 def load_models():
     import torch
@@ -56,8 +136,7 @@ def load_models():
         }
 
     return lora_goud, mt5_small, bert_models
-
-
+n
 def install_requirements(requirements_path="requirements.txt"):
     process = subprocess.Popen(
         ["pip", "install", "-r", requirements_path],
